@@ -3,7 +3,7 @@ package com.practiceApp.server;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-public class InputRequest {
+public class Request {
     String data;
     final String request;
     final String path;
@@ -24,7 +24,7 @@ public class InputRequest {
         this.data = data;
     }
 
-    InputRequest(BufferedReader reader) throws IOException {
+    Request(BufferedReader reader) throws IOException {
         String[] headerLine = reader.readLine().split(" ");
         this.request = headerLine[0];
         this.path = headerLine[1];
