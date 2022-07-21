@@ -1,25 +1,18 @@
 {
   "client": {
-    "id": "company_name",
-    "showcase": "mobile_app"
+    "id": "praktika_2022",
+    "showcase": "app"
   },
-  "product": "world_of_warcraft",
+  "product": "spotify",
   "payment": {
     "amount": 10000,
     "currency": 643,
-    "exponent": 2
+    "exponent": 3
   },
   "src": {
     "cls": "mc",
     "phone_number": "79163332211",
     "operator": "mts_ru"
-  },
-  "dst": {
-    "id": "Y6UBATOP9000",
-    "extra": {
-      "premium": true,
-      "game_server": "Europe"
-    }
   },
   "order": {
     "transaction": {
@@ -32,10 +25,5 @@
       "some_key": "some_value"
     }
   },
-  "extra": {
-    "from": "mobile_app",
-    "some_key": "some_value"
-  },
-  "callback": "https://companydomain.com",
   "tag": "Europe"
 }
