@@ -36,5 +36,12 @@
             <artifactId>gson</artifactId>
             <version>2.9.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>3.12.11</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/mongo-java-driver-3.12.11.jar</systemPath>
+        </dependency>
     </dependencies>
 </project>
