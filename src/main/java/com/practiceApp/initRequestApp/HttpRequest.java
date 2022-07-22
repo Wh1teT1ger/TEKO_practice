@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class HttpRequest {
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         try {
             if (args.length == 0) {
                 throw new Exception("Method not received");
@@ -27,7 +27,7 @@ public class HttpRequest {
             String method = args[0];
             String uri = "https://gate-test-02.teko.io/api/initiators/default/" + method;
             String json;
-            if(args.length == 1) {
+            if (args.length == 1) {
                 switch (method) {
                     case "initPayment" -> json = getTestInitPayment();
                     case "getPaymentStatus", "getPaymentById" -> json = getTestPaymentsById();
