@@ -27,6 +27,7 @@ public class HttpRequest {
             String method = args[0];
             String uri = "https://gate-test-02.teko.io/api/initiators/default/" + method;
             String json;
+            // crate example json
             if (args.length == 1) {
                 switch (method) {
                     case "initPayment" -> json = getTestInitPayment();

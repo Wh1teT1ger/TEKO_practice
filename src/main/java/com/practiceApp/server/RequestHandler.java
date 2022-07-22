@@ -18,6 +18,7 @@ import java.util.UUID;
 import java.sql.Timestamp;
 
 public class RequestHandler {
+    // isPaymentPossible request handler
     public static String isPaymentPossible(JsonObject json, MongoDatabase database) {
         String data;
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -33,6 +34,8 @@ public class RequestHandler {
                 Document account = merchantAccount.find(new Document("_id", "merchant_account_id")).first();
                 Document product = products.find(new Document("_id", checkProduct)).first();
                 int amount;
+
+                // test create db
                 if (account.isEmpty()) {
                     Document doc = new Document();
                     doc.append("_id", "merchant_account_id");
@@ -46,16 +49,18 @@ public class RequestHandler {
                 if (product.isEmpty()) {
                     Document doc = new Document();
                     doc.append("_id", checkProduct);
-                    doc.append("amount", 10);
+                    doc.append("quantity", 10);
                     products.insertOne(doc);
                     amountProducts = 10;
                 } else {
-                    amountProducts = product.getInteger("amount");
+                    amountProducts = product.getInteger("quantity");
                 }
+                // checking the availability of goods and funds
                 if (amount > payment.getAmount()) {
                     if (amountProducts > 0) {
                         responseData data1 = isPaymentPossibleData(json);
                         data = gson.toJson(data1);
+                        // writing information about the transaction to DB
                         Document doc = new Document();
                         doc.append("_id", data1.getId());
                         tempTransactions.insertOne(doc);
@@ -95,14 +100,16 @@ public class RequestHandler {
                 Payment scrPayment = gson.fromJson(json.getAsJsonObject("src_payment"), Payment.class);
 
                 Document product = products.find(new Document("_id", productId)).first();
-                int getAmount = product.getInteger("amount");
+                int getQuantity = product.getInteger("quantity");
 
                 if (!doc.isEmpty()) {
+                    // cash transaction
                     merchantAccount.updateOne(Filters.eq("_id", "merchant_account_id"),
                             Updates.set("value", getAccount - payment.getAmount() + scrPayment.getAmount()));
 
+                    // change information about the quantity of goods
                     products.updateOne(Filters.eq("_id", productId),
-                            Updates.set("amount", getAmount - 1));
+                            Updates.set("quantity", getQuantity - 1));
 
                     data = PaymentData(tx).toString();
                     tempTransactions.deleteOne(doc);
@@ -134,6 +141,7 @@ public class RequestHandler {
 
         try {
             if (checkJsonCancelPayment(json)) {
+                // delete information about the transaction from DB
                 Transaction tx = gson.fromJson(json.getAsJsonObject("partner_tx"), Transaction.class);
                 Document doc = tempTransactions.find(new Document("_id", tx.getId())).first();
                 tempTransactions.deleteOne(doc);
@@ -156,34 +164,35 @@ public class RequestHandler {
         MongoCollection<Document> products = database.getCollection("products");
         MongoCollection<Document> transactions = database.getCollection("transactions");
 
-        try{
-        if (checkJsonRollbackPayment(json)) {
-            Document account = merchantAccount.find(new Document("_id", "merchant_account_id")).first();
-            int getAccount = account.getInteger("value");
+        try {
+            if (checkJsonRollbackPayment(json)) {
+                Document account = merchantAccount.find(new Document("_id", "merchant_account_id")).first();
+                int getAccount = account.getInteger("value");
 
-            String productId = json.get("product").getAsString();
-            Transaction tx = gson.fromJson(json.getAsJsonObject("partner_tx"), Transaction.class);
-            Document doc = transactions.find(new Document("transaction", tx.getId())).first();
-            Payment payment = gson.fromJson(json.getAsJsonObject("payment"), Payment.class);
+                String productId = json.get("product").getAsString();
+                Transaction tx = gson.fromJson(json.getAsJsonObject("partner_tx"), Transaction.class);
+                Document doc = transactions.find(new Document("transaction", tx.getId())).first();
+                Payment payment = gson.fromJson(json.getAsJsonObject("payment"), Payment.class);
 
-            Document product = products.find(new Document("_id", productId)).first();
-            int getAmount = product.getInteger("amount");
+                Document product = products.find(new Document("_id", productId)).first();
+                int getAmount = product.getInteger("amount");
 
-            if (!doc.isEmpty()) {
-                merchantAccount.updateOne(Filters.eq("_id", "merchant_account_id"),
-                        Updates.set("value", getAccount + payment.getAmount()));
+                if (!doc.isEmpty()) {
+                    merchantAccount.updateOne(Filters.eq("_id", "merchant_account_id"),
+                            Updates.set("value", getAccount + payment.getAmount()));
 
-                products.updateOne(Filters.eq("_id", productId),
-                        Updates.set("amount", getAmount + 1));
+                    // return product
+                    products.updateOne(Filters.eq("_id", productId),
+                            Updates.set("amount", getAmount + 1));
 
-                data = PaymentData(tx).toString();
-                transactions.deleteOne(doc);
+                    data = PaymentData(tx).toString();
+                    transactions.deleteOne(doc);
+                } else {
+                    data = errorMessage(402, "Transaction transaction is missing");
+                }
             } else {
-                data = errorMessage(402, "Transaction transaction is missing");
+                data = errorMessage(402, "Bad json");
             }
-        } else {
-            data = errorMessage(402, "Bad json");
-        }
         } catch (JsonSyntaxException | NullPointerException e) {
             data = errorMessage(402, e.getMessage());
         }
@@ -191,6 +200,7 @@ public class RequestHandler {
         return data;
     }
 
+    // json structure validation
     public static boolean checkJsonIsPaymentPossible(JsonObject json) {
         return json.has("client") && json.has("product") && json.has("payment")
                 && json.has("order") && json.has("tx")
@@ -209,6 +219,7 @@ public class RequestHandler {
         return json.has("client") && json.has("tx") && json.has("partner_tx");
     }
 
+    // create response data
     public static responseData isPaymentPossibleData(JsonObject json) {
         Payment payment = new Payment(json);
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());

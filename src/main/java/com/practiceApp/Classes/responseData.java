@@ -20,7 +20,7 @@ public class responseData {
         this.result = new Result(code, description);
     }
 
-    public String getId(){
+    public String getId() {
         return this.result.tx.id;
     }
 

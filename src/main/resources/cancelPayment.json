@@ -1,0 +1,44 @@
+{
+  "client": {
+    "id": "test_client",
+    "showcase": "showcases"
+  },
+  "product": "test_client_product",
+  "payment": {
+    "amount": 100,
+    "currency": 643,
+    "exponent": 2
+  },
+  "dst": {
+    "id": "login",
+    "extra": {
+      "premium": true,
+      "game_server": "Europe"
+    }
+  },
+  "order": {
+    "transaction": {
+      "id": "qwerty",
+      "start_t": 1508336966892,
+      "finish_t": 1508336969354
+    },
+    "cls": "transaction",
+    "extra": {
+      "from": "mobile_app",
+      "some_key": "some_value"
+    }
+  },
+  "tx": {
+    "id": "59e765510cf26db591dbfb43",
+    "start_t": 1508336977892
+  },
+  "code": 42,
+  "description": "Unknown error",
+  "partner_tx": {
+    "id": "6c1a4eb4-37d5-46bf-bce9-a5dd8efb1d11",
+    "start_t": 1537134068907
+  },
+  "extra": {
+    "key": "important info"
+  }
+}
