@@ -137,11 +137,40 @@ public class RequestHandler {
     }
 
     public static String rollbackPayment(JsonObject json, MongoDatabase database) {
-        String data = "";
+        String data;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
         MongoCollection<Document> merchantAccount = database.getCollection("merchant_account");
         MongoCollection<Document> products = database.getCollection("products");
         MongoCollection<Document> transactions = database.getCollection("transactions");
+
+        if (checkJsonRollbackPayment(json)) {
+            Document account = merchantAccount.find(new Document("_id", "merchant_account_id")).first();
+            int getAccount = account.getInteger("value");
+
+            String productId = json.get("product").getAsString();
+            Transaction tx = gson.fromJson(json.getAsJsonObject("partner_tx"), Transaction.class);
+            Document doc = transactions.find(new Document("transaction", tx.getId())).first();
+            Payment payment = gson.fromJson(json.getAsJsonObject("payment"), Payment.class);
+
+            Document product = products.find(new Document("_id", productId)).first();
+            int getAmount = product.getInteger("amount");
+
+            if (!doc.isEmpty()) {
+                merchantAccount.updateOne(Filters.eq("_id", "merchant_account_id"),
+                        Updates.set("value", getAccount + payment.getAmount()));
+
+                products.updateOne(Filters.eq("_id", productId),
+                        Updates.set("amount", getAmount + 1));
+
+                data = PaymentData(tx).toString();
+                transactions.deleteOne(doc);
+            } else{
+                data = errorMessage(402, "Transaction transaction is missing");
+            }
+        } else {
+            data = errorMessage(402, "Bad json");
+        }
 
         return data;
     }
