@@ -1,0 +1,47 @@
+{
+  "client": {
+    "id": "test_client",
+    "showcase": "showcases"
+  },
+  "product": "test_client_product",
+  "payment": {
+    "amount": 100,
+    "currency": 643,
+    "exponent": 2
+  },
+  "src_payment": {
+    "amount": 110,
+    "currency": 643,
+    "exponent": 2
+  },
+  "rate": 110,
+  "order": {
+    "transaction": {
+      "id": "1122334455",
+      "start_t": 1508336966892,
+      "finish_t": 1508336969354
+    },
+    "cls": "transaction",
+    "extra": {
+      "from": "mobile_app",
+      "some_key": "some_value"
+    }
+  },
+  "tx": {
+    "id": "59e765510cf26db591dbfb43",
+    "start_t": 1508336977892
+  },
+  "src_cls": "tele2_ru",
+  "src": {
+    "phone_number": "79529612574",
+    "operator": "tele2_ru",
+    "cls": "mc"
+  },
+  "dst": {
+    "id": "login",
+    "extra": {
+      "premium": true,
+      "game_server": "Europe"
+    }
+  }
+}

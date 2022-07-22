@@ -7,6 +7,14 @@ public class Transaction {
     long start_t;
     long finish_t;
 
+    public String getId() {
+        return id;
+    }
+
+    public long getStart_t() {
+        return start_t;
+    }
+
     public Transaction(String id, long start_t) {
         this.id = id;
         this.start_t = start_t;

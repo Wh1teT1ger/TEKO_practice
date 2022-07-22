@@ -10,9 +10,9 @@ public class responseData {
         this.result = new Result(id, start_t, payment);
     }
 
-    public responseData(String success, String id, long start_t) {
+    public responseData(String success, String id, long start_t, long finish_t) {
         this.success = success;
-        this.result = new Result(id, start_t);
+        this.result = new Result(id, start_t, finish_t);
     }
 
     public responseData(String success, int code, String description) {
@@ -39,8 +39,8 @@ public class responseData {
             this.description = description;
         }
 
-        public Result(String id, long start_t) {
-            this.tx = new Transaction(id, start_t);
+        public Result(String id, long start_t, long finish_t) {
+            this.tx = new Transaction(id, start_t, finish_t);
         }
 
         public Result(String id, long start_t, Payment payment) {
