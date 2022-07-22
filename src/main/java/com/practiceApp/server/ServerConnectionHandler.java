@@ -46,7 +46,7 @@ public class ServerConnectionHandler extends Thread {
                 case "/resumePayment" -> data = RequestHandler.resumePayment(json, database);
                 case "/cancelPayment" -> data = RequestHandler.cancelPayment(json, database);
                 case "/rollbackPayment" -> data = RequestHandler.rollbackPayment(json, database);
-                default -> data = RequestHandler.errorMessage(402, "Bad request");
+                default -> data = RequestHandler.errorMessage(402, "Bad request" + request.path);
             }
 
             outputStream = socket.getOutputStream();

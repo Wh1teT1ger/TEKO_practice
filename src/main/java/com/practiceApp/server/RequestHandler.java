@@ -65,7 +65,7 @@ public class RequestHandler {
                 data = errorMessage(307, "Not enough money");
             }
         } else {
-            data = errorMessage(402, "Bad request");
+            data = errorMessage(402, "Bad json");
         }
         return data;
     }
@@ -90,7 +90,7 @@ public class RequestHandler {
             Payment scrPayment = gson.fromJson(json.getAsJsonObject("src_payment"), Payment.class);
 
             Document product = products.find(new Document("_id", productId)).first();
-            int getAmount = account.getInteger("amount");
+            int getAmount = product.getInteger("amount");
 
             if (!doc.isEmpty()) {
                 merchantAccount.updateOne(Filters.eq("_id", "merchant_account_id"),
@@ -102,16 +102,17 @@ public class RequestHandler {
                 data = PaymentData(tx).toString();
                 tempTransactions.deleteOne(doc);
 
-                Document transaction = gson.fromJson(data, Document.class);
+                Document transaction = new Document();
+                transaction.append("tx", json.getAsJsonObject("partner_tx").toString());
                 transaction.append("product", json.getAsJsonObject("product").toString());
                 transaction.append("payment", json.getAsJsonObject("payment").toString());
                 transaction.append("src_payment", json.getAsJsonObject("src_payment").toString());
                 transactions.insertOne(transaction);
             } else{
-                data = errorMessage(402, "Bad request");
+                data = errorMessage(402, "Transaction didnt start");
             }
         } else {
-            data = errorMessage(402, "Bad request");
+            data = errorMessage(402, "Bad json");
         }
 
         return data;
@@ -129,7 +130,7 @@ public class RequestHandler {
             tempTransactions.deleteOne(doc);
             data = PaymentData(tx).toString();
         } else{
-            data = errorMessage(402, "Bad request");
+            data = errorMessage(402, "Bad json");
         }
 
         return data;
@@ -140,7 +141,6 @@ public class RequestHandler {
 
         MongoCollection<Document> merchantAccount = database.getCollection("merchant_account");
         MongoCollection<Document> products = database.getCollection("products");
-        MongoCollection<Document> tempTransactions = database.getCollection("temp_transactions");
         MongoCollection<Document> transactions = database.getCollection("transactions");
 
         return data;
@@ -148,7 +148,7 @@ public class RequestHandler {
 
     public static boolean checkJsonIsPaymentPossible(JsonObject json) {
         return json.has("client") && json.has("product") && json.has("payment")
-                && json.has("order") && json.has("tx") && json.has("src_cls")
+                && json.has("order") && json.has("tx")
                 && json.has("src_payment");
     }
 
