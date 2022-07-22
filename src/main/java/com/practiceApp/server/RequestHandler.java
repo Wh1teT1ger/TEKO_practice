@@ -23,41 +23,49 @@ public class RequestHandler {
         String data;
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-        MongoCollection<Document> merchantAccount = database.getCollection("merchant_account");
+        MongoCollection<Document> merchantAccounts = database.getCollection("merchant_accounts");
         MongoCollection<Document> products = database.getCollection("products");
         MongoCollection<Document> tempTransactions = database.getCollection("temp_transactions");
 
         try {
             if (checkJsonIsPaymentPossible(json)) {
+                Client client = gson.fromJson(json.getAsJsonObject("client"), Client.class);
                 Payment payment = gson.fromJson(json.getAsJsonObject("payment"), Payment.class);
                 String checkProduct = json.get("product").getAsString();
-                Document account = merchantAccount.find(new Document("_id", "merchant_account_id")).first();
+                Document clientAccount = merchantAccounts.find(new Document("_id", client.getId())).first();
+                Document merchantAccount = merchantAccounts.find(new Document("_id", "merchant_account_id")).first();
                 Document product = products.find(new Document("_id", checkProduct)).first();
-                int amount;
+                int value;
 
-                // test create db
-                if (account.isEmpty()) {
+                // test create document db
+                if (merchantAccount.isEmpty()) {
                     Document doc = new Document();
                     doc.append("_id", "merchant_account_id");
-                    doc.append("value", 10000000);
-                    merchantAccount.insertOne(doc);
-                    amount = 10000000;
-                } else {
-                    amount = account.getInteger("value");
+                    doc.append("value", 10000);
+                    merchantAccounts.insertOne(doc);
                 }
-                int amountProducts;
+                if (clientAccount.isEmpty()) {
+                    Document doc = new Document();
+                    doc.append("_id", client.getId());
+                    doc.append("value", 10000);
+                    merchantAccounts.insertOne(doc);
+                    value = 10000000;
+                } else {
+                    value = clientAccount.getInteger("value");
+                }
+                int quantityProducts;
                 if (product.isEmpty()) {
                     Document doc = new Document();
                     doc.append("_id", checkProduct);
                     doc.append("quantity", 10);
                     products.insertOne(doc);
-                    amountProducts = 10;
+                    quantityProducts = 10;
                 } else {
-                    amountProducts = product.getInteger("quantity");
+                    quantityProducts = product.getInteger("quantity");
                 }
                 // checking the availability of goods and funds
-                if (amount > payment.getAmount()) {
-                    if (amountProducts > 0) {
+                if (value > payment.getAmount()) {
+                    if (quantityProducts > 0) {
                         responseData data1 = isPaymentPossibleData(json);
                         data = gson.toJson(data1);
                         // writing information about the transaction to DB
@@ -74,8 +82,8 @@ public class RequestHandler {
             } else {
                 data = errorMessage(402, "Bad json");
             }
-        } catch (JsonSyntaxException | NullPointerException jse) {
-            data = errorMessage(402, jse.getMessage());
+        } catch (JsonSyntaxException | NullPointerException e) {
+            data = errorMessage(402, e.getMessage());
         }
         return data;
     }
@@ -84,14 +92,17 @@ public class RequestHandler {
         String data;
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-        MongoCollection<Document> merchantAccount = database.getCollection("merchant_account");
+        MongoCollection<Document> merchantAccounts = database.getCollection("merchant_accounts");
         MongoCollection<Document> products = database.getCollection("products");
         MongoCollection<Document> tempTransactions = database.getCollection("temp_transactions");
         MongoCollection<Document> transactions = database.getCollection("transactions");
         try {
             if (checkJsonResumePayment(json)) {
-                Document account = merchantAccount.find(new Document("_id", "merchant_account_id")).first();
-                int getAccount = account.getInteger("value");
+                Client client = gson.fromJson(json.getAsJsonObject("client"), Client.class);
+                Document clientAccount = merchantAccounts.find(new Document("_id", client.getId())).first();
+                Document merchantAccount = merchantAccounts.find(new Document("_id", "merchant_account_id")).first();
+                int getClientAccount = clientAccount.getInteger("value");
+                int getMerchantAccount = merchantAccount.getInteger("value");
 
                 String productId = json.get("product").getAsString();
                 Transaction tx = gson.fromJson(json.getAsJsonObject("partner_tx"), Transaction.class);
@@ -104,8 +115,11 @@ public class RequestHandler {
 
                 if (!doc.isEmpty()) {
                     // cash transaction
-                    merchantAccount.updateOne(Filters.eq("_id", "merchant_account_id"),
-                            Updates.set("value", getAccount - payment.getAmount() + scrPayment.getAmount()));
+                    merchantAccounts.updateOne(Filters.eq("_id", client.getId()),
+                            Updates.set("value", getClientAccount - scrPayment.getAmount()));
+
+                    merchantAccounts.updateOne(Filters.eq("_id", "merchant_account_id"),
+                            Updates.set("value", getMerchantAccount + payment.getAmount()));
 
                     // change information about the quantity of goods
                     products.updateOne(Filters.eq("_id", productId),
@@ -116,6 +130,7 @@ public class RequestHandler {
 
                     Document transaction = new Document();
                     transaction.append("tx", json.getAsJsonObject("partner_tx").toString());
+                    transaction.append("client", json.getAsJsonObject("client").toString());
                     transaction.append("product", json.getAsJsonObject("product").toString());
                     transaction.append("payment", json.getAsJsonObject("payment").toString());
                     transaction.append("src_payment", json.getAsJsonObject("src_payment").toString());
@@ -160,14 +175,17 @@ public class RequestHandler {
         String data;
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-        MongoCollection<Document> merchantAccount = database.getCollection("merchant_account");
+        MongoCollection<Document> merchantAccounts = database.getCollection("merchant_accounts");
         MongoCollection<Document> products = database.getCollection("products");
         MongoCollection<Document> transactions = database.getCollection("transactions");
 
         try {
             if (checkJsonRollbackPayment(json)) {
-                Document account = merchantAccount.find(new Document("_id", "merchant_account_id")).first();
-                int getAccount = account.getInteger("value");
+                Client client = gson.fromJson(json.getAsJsonObject("client"), Client.class);
+                Document clientAccount = merchantAccounts.find(new Document("_id", client.getId())).first();
+                Document merchantAccount = merchantAccounts.find(new Document("_id", "merchant_account_id")).first();
+                int getClientAccount = clientAccount.getInteger("value");
+                int getMerchantAccount = merchantAccount.getInteger("value");
 
                 String productId = json.get("product").getAsString();
                 Transaction tx = gson.fromJson(json.getAsJsonObject("partner_tx"), Transaction.class);
@@ -176,10 +194,12 @@ public class RequestHandler {
 
                 Document product = products.find(new Document("_id", productId)).first();
                 int getAmount = product.getInteger("amount");
-
                 if (!doc.isEmpty()) {
-                    merchantAccount.updateOne(Filters.eq("_id", "merchant_account_id"),
-                            Updates.set("value", getAccount + payment.getAmount()));
+                    merchantAccounts.updateOne(Filters.eq("_id", "merchant_account_id"),
+                            Updates.set("value", getMerchantAccount - payment.getAmount()));
+
+                    merchantAccounts.updateOne(Filters.eq("_id", client.getId()),
+                            Updates.set("value", getClientAccount + payment.getAmount()));
 
                     // return product
                     products.updateOne(Filters.eq("_id", productId),

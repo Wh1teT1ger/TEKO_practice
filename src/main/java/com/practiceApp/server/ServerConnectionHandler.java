@@ -32,6 +32,7 @@ public class ServerConnectionHandler extends Thread {
         try {
             // parse request
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            System.out.println("Get request:");
             Request request = new Request(reader);
 
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -52,6 +53,7 @@ public class ServerConnectionHandler extends Thread {
             response.addHeader("Content-Type", "application/json");
             response.setEntity(data);
             response.send(outputStream);
+            System.out.println("Sent response");
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
