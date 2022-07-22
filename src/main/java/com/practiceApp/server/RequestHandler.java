@@ -118,11 +118,19 @@ public class RequestHandler {
     }
 
     public static String cancelPayment(JsonObject json, MongoDatabase database) {
-        String data = "";
+        String data;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-        MongoCollection<Document> merchantAccount = database.getCollection("merchant_account");
-        MongoCollection<Document> products = database.getCollection("products");
-        MongoCollection<Document> transactions = database.getCollection("transactions");
+        MongoCollection<Document> tempTransactions = database.getCollection("temp_transactions");
+
+        if(checkJsonCancelPayment(json)){
+            Transaction tx = gson.fromJson(json.getAsJsonObject("partner_tx"), Transaction.class);
+            Document doc = tempTransactions.find(new Document("_id", tx.getId())).first();
+            tempTransactions.deleteOne(doc);
+            data = PaymentData(tx).toString();
+        } else{
+            data = errorMessage(402, "Bad request");
+        }
 
         return data;
     }
